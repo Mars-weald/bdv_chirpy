@@ -23,9 +23,10 @@ func main() {
 		writer.Write([]byte("OK"))
 	}
 	//register handlers
-	serveM.HandleFunc("GET /healthz", pandle)
-	serveM.HandleFunc("GET /metrics", apiConch.serverHitsCount)
-	serveM.HandleFunc("POST /reset", apiConch.resetMetrics)
+	serveM.HandleFunc("GET /api/healthz", pandle)
+	serveM.HandleFunc("GET /admin/metrics", apiConch.serverHitsCount)
+	serveM.HandleFunc("POST /admin/reset", apiConch.resetMetrics)
+	serveM.HandleFunc("POST /api/validate_chirp", validateChirp)
 
 	fmt.Printf("Serving files from . on port: 8080\n")
 	sever.ListenAndServe()
