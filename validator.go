@@ -4,11 +4,32 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 type chirpFields struct {
-	Body  string `json:"body"`
-	Valid bool   `json:"valid"`
+	Body         string `json:"body"`
+	Valid        bool   `json:"valid"`
+	Cleaned_Body string `json:"cleaned_body"`
+}
+
+func censorChirp(text string) string {
+	const censorBar = "****"
+	words := strings.Split(text, " ")
+	for i, cheep := range words {
+		switch strings.ToLower(cheep) {
+		case "kerfuffle":
+			fallthrough
+		case "sharbert":
+			fallthrough
+		case "fornax":
+			words[i] = censorBar
+		default:
+			continue
+		}
+	}
+	cleanedChirp := strings.Join(words, " ")
+	return cleanedChirp
 }
 
 func errorResponse(writer http.ResponseWriter, code int, text string) error {
@@ -49,6 +70,8 @@ func validateChirp(writer http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		return
 	}
+
+	paramaters.Cleaned_Body = censorChirp(paramaters.Body)
 
 	paramaters.Valid = true
 	jsonResponse(writer, 200, paramaters)
