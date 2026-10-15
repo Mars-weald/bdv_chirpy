@@ -11,6 +11,7 @@ import (
 type apiConfig struct {
 	fileServerHits atomic.Int32
 	qs             *database.Queries
+	is_admin       string
 }
 
 // server hits stuff
@@ -31,8 +32,15 @@ func (conf *apiConfig) serverHitsCount(writer http.ResponseWriter, req *http.Req
 }
 
 func (conf *apiConfig) resetMetrics(writer http.ResponseWriter, req *http.Request) {
-	writer.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	writer.WriteHeader(200)
-	conf.fileServerHits.Store(0)
-	writer.Write([]byte("Server hits reset"))
+	if conf.is_admin != "dev" {
+		writer.Header().Add("Content-Type", "text/plain; charset=utf-8")
+		writer.WriteHeader(403)
+		writer.Write([]byte("FORBIDDEN COMMAND"))
+	} else {
+		writer.Header().Add("Content-Type", "text/plain; charset=utf-8")
+		writer.WriteHeader(200)
+		conf.fileServerHits.Store(0)
+		conf.qs.ResetUsers(req.Context())
+		writer.Write([]byte("Server hits, users table reset"))
+	}
 }

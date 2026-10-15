@@ -11,6 +11,7 @@ type chirpFields struct {
 	Body         string `json:"body"`
 	Valid        bool   `json:"valid"`
 	Cleaned_Body string `json:"cleaned_body"`
+	User_id      string `json:"user_id"`
 }
 
 func censorChirp(text string) string {
@@ -43,7 +44,7 @@ func errorResponse(writer http.ResponseWriter, code int, text string) error {
 	return nil
 }
 
-func jsonResponse(writer http.ResponseWriter, code int, form chirpFields) {
+func jsonResponse(writer http.ResponseWriter, code int, form Cherp) {
 	datum, err := json.Marshal(form)
 	if err != nil {
 		writer.WriteHeader(500)
@@ -54,25 +55,4 @@ func jsonResponse(writer http.ResponseWriter, code int, form chirpFields) {
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(code)
 	writer.Write(datum)
-}
-
-func validateChirp(writer http.ResponseWriter, req *http.Request) {
-	decoderPin := json.NewDecoder(req.Body)
-	paramaters := chirpFields{}
-	err := decoderPin.Decode(&paramaters)
-	if err != nil {
-		fmt.Printf("ERROR deconding json: %s\n", err)
-		writer.WriteHeader(500)
-		return
-	}
-
-	err = errorResponse(writer, 400, paramaters.Body)
-	if err != nil {
-		return
-	}
-
-	paramaters.Cleaned_Body = censorChirp(paramaters.Body)
-
-	paramaters.Valid = true
-	jsonResponse(writer, 200, paramaters)
 }
