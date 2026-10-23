@@ -35,13 +35,15 @@ func censorChirp(text string) string {
 
 func errorResponse(writer http.ResponseWriter, code int, text string) error {
 	// too long error
+	writer.Header().Add("Content-Type", "application/json")
+	writer.WriteHeader(code)
 	if len(text) > 140 {
-		writer.Header().Add("Content-Type", "text/plain; charset=utf-8")
-		writer.WriteHeader(code)
 		writer.Write([]byte("Chirp is too long"))
 		return fmt.Errorf("Chirp is too long")
+	} else {
+		writer.Write([]byte(text))
+		return fmt.Errorf("%s", text)
 	}
-	return nil
 }
 
 func jsonResponse(writer http.ResponseWriter, code int, form Cherp) {

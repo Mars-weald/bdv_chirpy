@@ -1,0 +1,7 @@
+POST http://localhost:8080/api/chirps HTTP/1.1
+Content-Type: application/json
+
+{
+    "body": "I'm gonna be a damn good developer, and people are gonna know about it.", 
+    "user_id": "4b75b461-13e6-4a6f-8b1c-d67104f10bd9"
+}

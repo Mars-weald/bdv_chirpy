@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/Mars-weald/bdv_chirpy/internal/database"
@@ -29,9 +30,8 @@ func (conf apiConfig) chirpEndpoint(writer http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	err = errorResponse(writer, 400, paramaters.Body)
-	if err != nil {
-		return
+	if len(paramaters.Body) > 140 {
+		errorResponse(writer, 400, paramaters.Body)
 	}
 
 	paramaters.Cleaned_Body = censorChirp(paramaters.Body)
@@ -41,7 +41,7 @@ func (conf apiConfig) chirpEndpoint(writer http.ResponseWriter, req *http.Reques
 	//Add to database
 	oozer, err := uuid.Parse(paramaters.User_id)
 	if err != nil {
-		fmt.Printf("ERROR parsing string to UUID")
+		errorResponse(writer, 400, "ERROR parsing uuid")
 		return
 	}
 	addChirpParams := database.CreateChirpParams{
@@ -53,11 +53,11 @@ func (conf apiConfig) chirpEndpoint(writer http.ResponseWriter, req *http.Reques
 	}
 	chirp, err := conf.qs.CreateChirp(context.Background(), addChirpParams)
 	if err != nil {
-		fmt.Printf("ERROR creating chirp database entry")
+		errorResponse(writer, 400, "ERROR creating chirp entry")
 		return
 	}
 
-	//FUCK YOU. I FAIL BECAUSE THE FIELD NAMES ARE NOT THE EXACT. SAME. FUCK YOU.
+	//tag fixing
 	fixedtags := Cherp{
 		ID:        chirp.ID,
 		CreatedAt: chirp.CreatedAt,
@@ -66,4 +66,60 @@ func (conf apiConfig) chirpEndpoint(writer http.ResponseWriter, req *http.Reques
 		User_id:   chirp.UserID,
 	}
 	jsonResponse(writer, 201, fixedtags)
+}
+
+func (conf apiConfig) getChirpsEndpoint(writer http.ResponseWriter, req *http.Request) {
+	//getting chirps
+	var tagFixed []Cherp
+	arrayOfChirps, err := conf.qs.GetAllChirps(context.Background())
+	if err != nil {
+		fmt.Printf("ERROR getting chirps: %s\n", err)
+		os.Exit(1)
+	}
+
+	for _, entry := range arrayOfChirps {
+		new := Cherp{
+			ID:        entry.ID,
+			CreatedAt: entry.CreatedAt,
+			UpdatedAt: entry.UpdatedAt,
+			Body:      entry.Body,
+			User_id:   entry.UserID,
+		}
+
+		tagFixed = append(tagFixed, new)
+	}
+	//to []byte for response
+	dataArray, err := json.Marshal(tagFixed)
+	if err != nil {
+		fmt.Printf("ERROR marshaling: %s\n", err)
+		os.Exit(1)
+	}
+	//set response
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(200)
+	writer.Write(dataArray)
+}
+
+func (conf apiConfig) getSingleChirp(writer http.ResponseWriter, req *http.Request) {
+	idString := req.PathValue("chirpID")
+	if idString == "" {
+		errorResponse(writer, 404, "Resource not found")
+	} else {
+		ego, err := uuid.Parse(idString)
+		if err != nil {
+			errorResponse(writer, 418, "Teapot can't parse uuid string")
+		}
+		chirpData, err := conf.qs.GetOneChirp(context.Background(), ego)
+		if err != nil {
+			errorResponse(writer, 404, "chirp not found")
+		}
+		newer := Cherp{
+			ID:        chirpData.ID,
+			CreatedAt: chirpData.CreatedAt,
+			UpdatedAt: chirpData.UpdatedAt,
+			Body:      chirpData.Body,
+			User_id:   chirpData.UserID,
+		}
+		jsonResponse(writer, 200, newer)
+	}
 }

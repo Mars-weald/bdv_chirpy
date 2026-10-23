@@ -51,6 +51,8 @@ func main() {
 	serveM.HandleFunc("GET /admin/metrics", apiConch.serverHitsCount)
 	serveM.HandleFunc("POST /admin/reset", apiConch.resetMetrics)
 	serveM.HandleFunc("POST /api/chirps", apiConch.chirpEndpoint)
+	serveM.HandleFunc("GET /api/chirps", apiConch.getChirpsEndpoint)
+	serveM.HandleFunc("GET /api/chirps/{chirpID}", apiConch.getSingleChirp)
 	serveM.HandleFunc("POST /api/users", apiConch.userHandler)
 
 	fmt.Printf("Serving files from . on port: 8080\n")
